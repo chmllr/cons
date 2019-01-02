@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -41,9 +42,10 @@ func main() {
 		for _, fileName := range files {
 			from := filepath.Join(sourceFolder, fileName)
 			to := filepath.Join(destinationPath, fileName)
-			err := os.Rename(from, to)
+			err := copyFile(from, to)
 			if err != nil {
-				log.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
+				log.Printf("couldn't copy file from %q to %q: %v\n", from, to, err)
+				continue
 			}
 			imported++
 		}
@@ -65,4 +67,32 @@ func datetime(path string) (time.Time, error) {
 	}
 
 	return x.DateTime()
+}
+
+func copyFile(from, to string) error {
+	stat, err := os.Stat(to)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	destinationNonEmpty := stat != nil
+
+	data, err := ioutil.ReadFile(from)
+	if err != nil {
+		return err
+	}
+
+	if destinationNonEmpty {
+		destData, err := ioutil.ReadFile(to)
+		if err != nil {
+			return fmt.Errorf("file %q exists and couldn't be read: %v", to, err)
+		}
+		for i := range destData {
+			if i >= len(data) || data[i] != destData[i] {
+				return fmt.Errorf("file %q already exists and is different than file %q", to, from)
+			}
+		}
+		return fmt.Errorf("file %q is already imported", from)
+	}
+
+	return ioutil.WriteFile(to, data, 0644)
 }
