@@ -7,7 +7,7 @@ clean-testlib:
 restore-import:
 	cp -rf testdata/import-original/* testdata/import/
 
-restore:
+clean:
 	make clean-testlib
 	make restore-import
 
