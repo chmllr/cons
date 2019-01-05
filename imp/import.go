@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/rwcarlsen/goexif/exif"
@@ -21,7 +23,7 @@ func Import(libFolder, sourceFolder string) {
 	log.Println("files found:", len(files))
 	folders := map[string][]string{}
 	for _, f := range files {
-		t, err := datetime(filepath.Join(sourceFolder, f.Name()))
+		t, err := dateTime(filepath.Join(sourceFolder, f.Name()))
 		if err != nil {
 			log.Printf("skipping file %s due to errors: %v\n", f.Name(), err)
 			continue
@@ -51,17 +53,38 @@ func Import(libFolder, sourceFolder string) {
 	log.Printf("files succesfully imported: %d/%d", imported, len(files))
 }
 
-func datetime(path string) (time.Time, error) {
+func dateTime(path string) (time.Time, error) {
+	jpeg := regexp.MustCompile(`(?i)\.jpe?g`)
+	if jpeg.MatchString(path) {
+		return imgDateTime(path)
+	}
+	mp4 := regexp.MustCompile(`(?i)\.mp4`)
+	if mp4.MatchString(path) {
+		return mp4DateTime(path)
+	}
+	return time.Now(), fmt.Errorf("unsupported file format: %s", path)
+}
+
+func mp4DateTime(path string) (time.Time, error) {
+	_, fileName := filepath.Split(path)
+	fNameParts := strings.Split(fileName, "_")
+	if len(fNameParts) != 3 {
+		return time.Time{}, fmt.Errorf("unexpected filename %q", fileName)
+	}
+	return time.Parse("20060102", fNameParts[1])
+}
+
+func imgDateTime(path string) (time.Time, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return time.Now(), err
+		return time.Time{}, err
 	}
 
 	exif.RegisterParsers(mknote.All...)
 
 	x, err := exif.Decode(f)
 	if err != nil {
-		return time.Now(), err
+		return time.Time{}, err
 	}
 
 	return x.DateTime()
