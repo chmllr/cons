@@ -42,9 +42,9 @@ func main() {
 		for _, fileName := range files {
 			from := filepath.Join(sourceFolder, fileName)
 			to := filepath.Join(destinationPath, fileName)
-			err := copyFile(from, to)
+			err := moveFile(from, to)
 			if err != nil {
-				log.Printf("couldn't copy file from %q to %q: %v\n", from, to, err)
+				log.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
 				continue
 			}
 			imported++
@@ -69,7 +69,7 @@ func datetime(path string) (time.Time, error) {
 	return x.DateTime()
 }
 
-func copyFile(from, to string) error {
+func moveFile(from, to string) error {
 	stat, err := os.Stat(to)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -94,5 +94,9 @@ func copyFile(from, to string) error {
 		return fmt.Errorf("file %q is already imported", from)
 	}
 
-	return ioutil.WriteFile(to, data, 0644)
+	if err := ioutil.WriteFile(to, data, 0644); err != nil {
+		return err
+	}
+
+	return os.Remove(from)
 }
