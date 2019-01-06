@@ -97,12 +97,12 @@ func moveFile(from, to string) error {
 	}
 	destinationNonEmpty := stat != nil
 
-	data, err := ioutil.ReadFile(from)
-	if err != nil {
-		return err
-	}
-
 	if destinationNonEmpty {
+		data, err := ioutil.ReadFile(from)
+		if err != nil {
+			return err
+		}
+
 		destData, err := ioutil.ReadFile(to)
 		if err != nil {
 			return fmt.Errorf("file %q exists and couldn't be read: %v", to, err)
@@ -115,9 +115,5 @@ func moveFile(from, to string) error {
 		return fmt.Errorf("file %q is already imported", from)
 	}
 
-	if err := ioutil.WriteFile(to, data, 0644); err != nil {
-		return err
-	}
-
-	return os.Remove(from)
+	return os.Rename(from, to)
 }
