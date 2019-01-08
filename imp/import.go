@@ -62,7 +62,7 @@ func dateTime(path string) (time.Time, error) {
 	if mp4.MatchString(path) {
 		return mp4DateTime(path)
 	}
-	return time.Now(), fmt.Errorf("unsupported file format: %s", path)
+	return time.Time{}, fmt.Errorf("unsupported file format: %s", path)
 }
 
 func mp4DateTime(path string) (time.Time, error) {
@@ -109,10 +109,10 @@ func moveFile(from, to string) error {
 		}
 		for i := range destData {
 			if i >= len(data) || data[i] != destData[i] {
-				return fmt.Errorf("file %q already exists and is different than file %q", to, from)
+				return fmt.Errorf("file %q already exists and differs from file %q", to, from)
 			}
 		}
-		return fmt.Errorf("file %q is already imported", from)
+		return fmt.Errorf("file %q is already imported, skipping...", from)
 	}
 
 	return os.Rename(from, to)
