@@ -14,6 +14,11 @@ import (
 	"github.com/rwcarlsen/goexif/mknote"
 )
 
+var (
+	jpegRegexp = regexp.MustCompile(`(?i)\.jpe?g`)
+	mp4Regexp  = regexp.MustCompile(`(?i)\.mp4`)
+)
+
 func Import(libFolder, sourceFolder string) {
 	files, err := ioutil.ReadDir(sourceFolder)
 	if err != nil {
@@ -22,10 +27,23 @@ func Import(libFolder, sourceFolder string) {
 
 	log.Println("files found:", len(files))
 	folders := map[string][]string{}
+	skipped := 0
+	errors := 0
 	for _, f := range files {
-		t, err := dateTime(filepath.Join(sourceFolder, f.Name()))
+		var err error
+		var t time.Time
+		fullName := filepath.Join(sourceFolder, f.Name())
+		if jpegRegexp.MatchString(fullName) {
+			t, err = imgDateTime(fullName)
+		} else if mp4Regexp.MatchString(fullName) {
+			t, err = mp4DateTime(fullName)
+		} else {
+			skipped++
+			continue
+		}
 		if err != nil {
 			log.Printf("skipping file %s due to errors: %v\n", f.Name(), err)
+			errors++
 			continue
 		}
 		folder := t.Format("2006/01/02")
@@ -50,19 +68,7 @@ func Import(libFolder, sourceFolder string) {
 			imported++
 		}
 	}
-	log.Printf("files succesfully imported: %d/%d", imported, len(files))
-}
-
-func dateTime(path string) (time.Time, error) {
-	jpeg := regexp.MustCompile(`(?i)\.jpe?g`)
-	if jpeg.MatchString(path) {
-		return imgDateTime(path)
-	}
-	mp4 := regexp.MustCompile(`(?i)\.mp4`)
-	if mp4.MatchString(path) {
-		return mp4DateTime(path)
-	}
-	return time.Time{}, fmt.Errorf("unsupported file format: %s", path)
+	log.Printf("files succesfully imported: %d/%d (%d skipped, %d failed)", imported, len(files), skipped, errors)
 }
 
 func mp4DateTime(path string) (time.Time, error) {
