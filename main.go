@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/chmllr/imgtb/checksum"
 	"github.com/chmllr/imgtb/imp"
 )
 
@@ -26,6 +27,13 @@ func main() {
 	case "import":
 		log.Println("importing to", *lib, "from", *source)
 		imp.Import(*lib, *source)
+	case "checksum":
+		log.Println("computing checksums in", *lib)
+		content, err := checksum.Report(*lib)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Print(content)
 	default:
 		printHelp()
 		os.Exit(1)
