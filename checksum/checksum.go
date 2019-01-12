@@ -23,7 +23,7 @@ func Report(lib string) (string, error) {
 			log.Fatal(err)
 		}
 
-		if info.IsDir() {
+		if info.IsDir() || !jpegRegexp.MatchString(path) && !mp4Regexp.MatchString(path) {
 			return nil
 		}
 
