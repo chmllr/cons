@@ -74,10 +74,10 @@ func Import(libFolder, sourceFolder string) {
 func mp4DateTime(path string) (time.Time, error) {
 	_, fileName := filepath.Split(path)
 	fNameParts := strings.Split(fileName, "_")
-	if len(fNameParts) != 3 {
+	if len(fNameParts) != 2 {
 		return time.Time{}, fmt.Errorf("unexpected filename %q", fileName)
 	}
-	return time.Parse("20060102", fNameParts[1])
+	return time.Parse("20060102", fNameParts[0])
 }
 
 func imgDateTime(path string) (time.Time, error) {
