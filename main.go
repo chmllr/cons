@@ -35,11 +35,14 @@ func main() {
 		}
 		fmt.Print(content)
 	default:
+		fmt.Printf("Error: unknown command %q\n\n", cmd)
 		printHelp()
 		os.Exit(1)
 	}
 }
 
 func printHelp() {
-	fmt.Println("TBD")
+	fmt.Println("Usage: imgtb [OPTIONS] <COMMAND>")
+	fmt.Println("Avaliable options:")
+	flag.PrintDefaults()
 }
