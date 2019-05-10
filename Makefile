@@ -13,3 +13,7 @@ clean:
 
 show:
 	tree testdata/lib
+
+create-test-data:
+	mkdir -p testdata/lib testdata/import-original testdata/lib testdata/import
+
