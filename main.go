@@ -8,9 +8,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chmllr/imgtb/checksum"
+	"github.com/chmllr/imgtb/health"
 	"github.com/chmllr/imgtb/imp"
+
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -28,10 +32,10 @@ func main() {
 
 	switch cmd {
 	case "import":
-		log.Println("importing to", *lib, "from", *source)
+		log.Println("importing to", *lib, "from", *source, "...")
 		imp.Import(*lib, *source)
 	case "checksum":
-		log.Println("computing checksums in", *lib)
+		log.Println("computing checksums in", *lib, "...")
 		hashes, err := checksum.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
@@ -50,7 +54,41 @@ func main() {
 		}
 		fmt.Println("Successfully written checksums to", filepath)
 	case "health":
-		fmt.Println("checking health of", *lib)
+		fmt.Println("checking health of", *lib, "...")
+		hashes, err := checksum.Report(*lib)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mapping1 := map[string]string{}
+		for _, e := range hashes {
+			mapping1[e.Path] = e.Hash
+		}
+		mapping2 := map[string]string{}
+		content, err := ioutil.ReadFile(filepath.Join(*lib, "checksums.txt"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, line := range strings.Fields(string(content)) {
+			fields := strings.Split(line, "::")
+			mapping2[fields[0]] = fields[1]
+		}
+		corrupted := health.Verify(*lib, mapping1, mapping2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(corrupted) == 0 && len(mapping1) == 0 && len(mapping2) == 0 {
+			fmt.Println(*lib, "is in perfect health! ✅")
+			return
+		}
+		for _, path := range corrupted {
+			color.Red("File %s is corrupted!", path)
+		}
+		for path := range mapping2 {
+			color.Red("File %s is missing!", path)
+		}
+		for path := range mapping1 {
+			color.Cyan("File %s is new!", path)
+		}
 	default:
 		fmt.Printf("Error: unknown command %q\n\n", cmd)
 		printHelp()

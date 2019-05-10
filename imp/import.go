@@ -19,6 +19,7 @@ var (
 	mp4Regexp  = regexp.MustCompile(`(?i)\.mp4`)
 )
 
+// Import puts every file into the lib with YYYY/MM/DD folder structure
 func Import(libFolder, sourceFolder string) {
 	files, err := ioutil.ReadDir(sourceFolder)
 	if err != nil {
