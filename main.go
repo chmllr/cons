@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/chmllr/imgtb/checksum"
 	"github.com/chmllr/imgtb/imp"
@@ -29,11 +32,25 @@ func main() {
 		imp.Import(*lib, *source)
 	case "checksum":
 		log.Println("computing checksums in", *lib)
-		content, err := checksum.Report(*lib)
+		hashes, err := checksum.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Print(content)
+		filepath := filepath.Join(*lib, "checksums.txt")
+		var buf bytes.Buffer
+		for _, e := range hashes {
+			buf.WriteString(e.Path)
+			buf.WriteString("::")
+			buf.WriteString(e.Hash)
+			buf.WriteString("\n")
+		}
+		err = ioutil.WriteFile(filepath, buf.Bytes(), 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Successfully written checksums to", filepath)
+	case "health":
+		fmt.Println("checking health of", *lib)
 	default:
 		fmt.Printf("Error: unknown command %q\n\n", cmd)
 		printHelp()

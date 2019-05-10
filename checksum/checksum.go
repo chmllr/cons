@@ -1,7 +1,6 @@
 package checksum
 
 import (
-	"bytes"
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 )
 
 var (
@@ -16,9 +16,10 @@ var (
 	mp4Regexp  = regexp.MustCompile(`(?i)\.mp4`)
 )
 
-func Report(lib string) (string, error) {
-	var buf bytes.Buffer
-	err := filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
+// Reports walks through the folder structure and returns a mapping
+// file path -> md5 hash
+func Report(lib string) (res []struct{ Path, Hash string }, err error) {
+	err = filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -31,17 +32,15 @@ func Report(lib string) (string, error) {
 		if err != nil {
 			return err
 		}
-		buf.WriteString(path)
-		buf.WriteString("::")
-		buf.WriteString(h)
-		buf.WriteRune('\n')
+		res = append(res, struct{ Path, Hash string }{path, h})
 		return nil
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return buf.String(), nil
+	sort.Slice(res, func(i, j int) bool { return res[i].Path < res[j].Path })
+	return
 }
 
 func hash(file string) (string, error) {
