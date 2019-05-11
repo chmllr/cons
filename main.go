@@ -68,8 +68,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		for _, line := range strings.Fields(string(content)) {
+		for _, line := range strings.Split(string(content), "\n") {
 			fields := strings.Split(line, "::")
+			if len(fields) != 2 {
+				log.Fatalf("unexpected line: %s", line)
+			}
 			mapping2[fields[0]] = fields[1]
 		}
 		corrupted := health.Verify(*lib, mapping1, mapping2)
