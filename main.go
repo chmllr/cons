@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/chmllr/imgtb/checksum"
 	"github.com/chmllr/imgtb/health"
@@ -47,50 +46,36 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		mapping1 := map[string]string{}
-		for _, e := range hashes {
-			mapping1[e.Path] = e.Hash
-		}
-		mapping2 := map[string]string{}
-		content, err := ioutil.ReadFile(filepath.Join(*lib, "checksums.txt"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, line := range strings.Split(strings.TrimSpace(string(content)), "\n") {
-			fields := strings.Split(line, "::")
-			if len(fields) != 2 {
-				log.Fatalf("unexpected line: %q", line)
-			}
-			mapping2[fields[0]] = fields[1]
-		}
-		corrupted := health.Verify(*lib, mapping1, mapping2)
+		corrupted, found, sealed := health.Verify(*lib, hashes)
 		if err != nil {
 			log.Fatal(err)
 		}
 		for _, path := range corrupted {
 			color.Red("File %s is corrupted!", path)
 		}
-		for path := range mapping2 {
+		for path := range sealed {
 			color.Red("File %s is missing!", path)
 		}
-		for path := range mapping1 {
+		for path := range found {
 			color.Cyan("File %s is new!", path)
 		}
-		if len(corrupted) == 0 && len(mapping1) > 0 && len(mapping2) == 0 {
-			fmt.Println("Do you want me do seal new files? [n/Y]")
-			var answer string
-			fmt.Scanf("%s", &answer)
-			if answer == "" || answer == "y" || answer == "Y" {
-				log.Println("sealing...")
-				for path, hash := range mapping1 {
-					hashes = append(hashes, struct{ Path, Hash string }{path, hash})
-					delete(mapping1, path)
+		if len(corrupted) == 0 && len(sealed) == 0 {
+			if len(found) > 0 {
+				fmt.Println("Do you want me do seal new files? [n/Y]")
+				var answer string
+				fmt.Scanf("%s", &answer)
+				if answer == "" || answer == "y" || answer == "Y" {
+					log.Println("sealing...")
+					for path, hash := range found {
+						hashes = append(hashes, struct{ Path, Hash string }{path, hash})
+						delete(found, path)
+					}
+					saveReport(*lib, hashes)
 				}
-				saveReport(*lib, hashes)
 			}
-		}
-		if len(corrupted) == 0 && len(mapping1) == 0 && len(mapping2) == 0 {
-			log.Println(*lib, "is in perfect health! ✅")
+			if len(found) == 0 {
+				log.Println(*lib, "is in perfect health! ✅")
+			}
 		}
 	default:
 		log.Printf("Error: unknown command %q\n\n", cmd)
