@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 )
 
 var (
@@ -19,14 +20,20 @@ var (
 // Reports walks through the folder structure and returns a mapping
 // file path -> md5 hash
 func Report(lib string) (res []struct{ Path, Hash string }, err error) {
+	maxLength := 0
 	err = filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		if info.IsDir() || !jpegRegexp.MatchString(path) && !mp4Regexp.MatchString(path) {
 			return nil
 		}
+
+		out := fmt.Sprintf("computing hash of %s...", path)
+		if maxLength < len(out) {
+			maxLength = len(out)
+		}
+		fmt.Printf("\r%s", pad(out, maxLength))
 
 		h, err := hash(path)
 		if err != nil {
@@ -39,6 +46,7 @@ func Report(lib string) (res []struct{ Path, Hash string }, err error) {
 		return nil, err
 	}
 
+	log.Printf("\r%s\n", pad("sorting...", maxLength))
 	sort.Slice(res, func(i, j int) bool { return res[i].Path < res[j].Path })
 	return
 }
@@ -46,4 +54,8 @@ func Report(lib string) (res []struct{ Path, Hash string }, err error) {
 func hash(file string) (string, error) {
 	data, err := ioutil.ReadFile(file)
 	return fmt.Sprintf("%x", md5.Sum(data)), err
+}
+
+func pad(s string, l int) string {
+	return s + strings.Repeat(" ", l-len(s))
 }

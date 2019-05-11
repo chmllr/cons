@@ -35,7 +35,7 @@ func main() {
 		log.Println("importing to", *lib, "from", *source, "...")
 		imp.Import(*lib, *source)
 	case "checksum":
-		log.Println("computing checksums in", *lib, "...")
+		log.Println("compu]ing checksums in", *lib, "...")
 		hashes, err := checksum.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
@@ -52,9 +52,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("Successfully written checksums to", filepath)
+		log.Println("Successfully written checksums to", filepath)
 	case "health":
-		fmt.Println("checking health of", *lib, "...")
+		log.Printf("checking health of %q...\n", *lib)
 		hashes, err := checksum.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
@@ -80,7 +80,7 @@ func main() {
 			log.Fatal(err)
 		}
 		if len(corrupted) == 0 && len(mapping1) == 0 && len(mapping2) == 0 {
-			fmt.Println(*lib, "is in perfect health! ✅")
+			log.Println(*lib, "is in perfect health! ✅")
 			return
 		}
 		for _, path := range corrupted {
@@ -93,7 +93,7 @@ func main() {
 			color.Cyan("File %s is new!", path)
 		}
 	default:
-		fmt.Printf("Error: unknown command %q\n\n", cmd)
+		log.Printf("Error: unknown command %q\n\n", cmd)
 		printHelp()
 		os.Exit(1)
 	}
