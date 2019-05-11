@@ -46,7 +46,8 @@ func Report(lib string) (res []struct{ Path, Hash string }, err error) {
 		return nil, err
 	}
 
-	log.Printf("\r%s\n", pad("sorting...", maxLength))
+	fmt.Printf("\r%s", "")
+	log.Println(pad("sorting...", maxLength))
 	sort.Slice(res, func(i, j int) bool { return res[i].Path < res[j].Path })
 	return
 }

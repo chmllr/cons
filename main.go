@@ -34,25 +34,13 @@ func main() {
 	case "import":
 		log.Println("importing to", *lib, "from", *source, "...")
 		imp.Import(*lib, *source)
-	case "checksum":
-		log.Println("compu]ing checksums in", *lib, "...")
+	case "seal":
+		log.Println("computing checksums in", *lib, "...")
 		hashes, err := checksum.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
 		}
-		filepath := filepath.Join(*lib, "checksums.txt")
-		var buf bytes.Buffer
-		for _, e := range hashes {
-			buf.WriteString(e.Path)
-			buf.WriteString("::")
-			buf.WriteString(e.Hash)
-			buf.WriteString("\n")
-		}
-		err = ioutil.WriteFile(filepath, buf.Bytes(), 0666)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("Successfully written checksums to", filepath)
+		saveReport(*lib, hashes)
 	case "health":
 		log.Printf("checking health of %q...\n", *lib)
 		hashes, err := checksum.Report(*lib)
@@ -68,20 +56,16 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		for _, line := range strings.Split(string(content), "\n") {
+		for _, line := range strings.Split(strings.TrimSpace(string(content)), "\n") {
 			fields := strings.Split(line, "::")
 			if len(fields) != 2 {
-				log.Fatalf("unexpected line: %s", line)
+				log.Fatalf("unexpected line: %q", line)
 			}
 			mapping2[fields[0]] = fields[1]
 		}
 		corrupted := health.Verify(*lib, mapping1, mapping2)
 		if err != nil {
 			log.Fatal(err)
-		}
-		if len(corrupted) == 0 && len(mapping1) == 0 && len(mapping2) == 0 {
-			log.Println(*lib, "is in perfect health! ✅")
-			return
 		}
 		for _, path := range corrupted {
 			color.Red("File %s is corrupted!", path)
@@ -91,6 +75,22 @@ func main() {
 		}
 		for path := range mapping1 {
 			color.Cyan("File %s is new!", path)
+		}
+		if len(corrupted) == 0 && len(mapping1) > 0 && len(mapping2) == 0 {
+			fmt.Println("Do you want me do seal new files? [n/Y]")
+			var answer string
+			fmt.Scanf("%s", &answer)
+			if answer == "" || answer == "y" || answer == "Y" {
+				log.Println("sealing...")
+				for path, hash := range mapping1 {
+					hashes = append(hashes, struct{ Path, Hash string }{path, hash})
+					delete(mapping1, path)
+				}
+				saveReport(*lib, hashes)
+			}
+		}
+		if len(corrupted) == 0 && len(mapping1) == 0 && len(mapping2) == 0 {
+			log.Println(*lib, "is in perfect health! ✅")
 		}
 	default:
 		log.Printf("Error: unknown command %q\n\n", cmd)
@@ -103,4 +103,20 @@ func printHelp() {
 	fmt.Println("Usage: imgtb [OPTIONS] <COMMAND>")
 	fmt.Println("Avaliable options:")
 	flag.PrintDefaults()
+}
+
+func saveReport(lib string, hashes []struct{ Path, Hash string }) {
+	filepath := filepath.Join(lib, "checksums.txt")
+	var buf bytes.Buffer
+	for _, e := range hashes {
+		buf.WriteString(e.Path)
+		buf.WriteString("::")
+		buf.WriteString(e.Hash)
+		buf.WriteString("\n")
+	}
+	err := ioutil.WriteFile(filepath, buf.Bytes(), 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("checksums written to", filepath)
 }
