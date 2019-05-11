@@ -21,6 +21,8 @@ var (
 
 // Import puts every file into the lib with YYYY/MM/DD folder structure
 func Import(libFolder, sourceFolder string) {
+	exif.RegisterParsers(mknote.All...)
+
 	files, err := ioutil.ReadDir(sourceFolder)
 	if err != nil {
 		log.Fatal(err)
@@ -86,8 +88,6 @@ func imgDateTime(path string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-
-	exif.RegisterParsers(mknote.All...)
 
 	x, err := exif.Decode(f)
 	if err != nil {
