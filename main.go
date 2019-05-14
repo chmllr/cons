@@ -85,9 +85,21 @@ func main() {
 }
 
 func printHelp() {
-	fmt.Println("Usage: imgtb [OPTIONS] <COMMAND>")
-	fmt.Println("Avaliable options:")
-	flag.PrintDefaults()
+	fmt.Println(`Usage: imgtb --lib <PATH> [OPTIONS] <COMMAND>
+
+Avaliable commands:
+
+import (requires option --source <PATH>):
+	Imports all media files from the specified source path into the lib folder.
+	It creates the corresponding folder structure (<lib>/YYYY/MM/DD) if necessary.
+
+seal:
+	Records all existing files with their md5 hashes into a registry.
+
+health:
+	Checks existing file structure against the registry recorded with seal.
+	This command can detect missing, modified, duplicated and new files.`)
+
 }
 
 func saveReport(lib string, hashes []struct{ Path, Hash string }) {
