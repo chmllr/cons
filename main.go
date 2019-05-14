@@ -57,12 +57,15 @@ func main() {
 			color.Red("File %s is missing!", path)
 		}
 		for _, paths := range duplicates {
-			color.Yellow("These files are duplicates: %v", paths)
+			color.Yellow("These files are duplicates:")
+			for _, path := range paths {
+				color.Yellow(" - %s", path)
+			}
 		}
 		for path := range found {
 			color.Cyan("File %s is new!", path)
 		}
-		if len(corrupted) == 0 && len(sealed) == 0 {
+		if len(corrupted) == 0 && len(sealed) == 0 && len(duplicates) == 0 {
 			if len(found) > 0 {
 				fmt.Println("Do you want me do seal new files? [n/Y]")
 				var answer string
