@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/chmllr/imgtb/checksum"
 	"github.com/chmllr/imgtb/health"
 	"github.com/chmllr/imgtb/imp"
+	"github.com/chmllr/imgtb/seal"
 
 	"github.com/fatih/color"
 )
@@ -22,7 +22,7 @@ func main() {
 	source := flag.String("source", "", "source directory")
 	flag.Parse()
 
-	if len(flag.Args()) != 1 {
+	if len(flag.Args()) != 1 || *lib == "" {
 		printHelp()
 		os.Exit(1)
 	}
@@ -34,19 +34,19 @@ func main() {
 		log.Println("importing to", *lib, "from", *source, "...")
 		imp.Import(*lib, *source)
 	case "seal":
-		log.Println("computing checksums in", *lib, "...")
-		hashes, err := checksum.Report(*lib)
+		log.Println("sealing", *lib, "...")
+		hashes, err := seal.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
 		}
 		saveReport(*lib, hashes)
 	case "health":
 		log.Printf("checking health of %q...\n", *lib)
-		hashes, err := checksum.Report(*lib)
+		hashes, err := seal.Report(*lib)
 		if err != nil {
 			log.Fatal(err)
 		}
-		corrupted, found, sealed := health.Verify(*lib, hashes)
+		corrupted, found, sealed, duplicates := health.Verify(*lib, hashes)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -55,6 +55,9 @@ func main() {
 		}
 		for path := range sealed {
 			color.Red("File %s is missing!", path)
+		}
+		for _, paths := range duplicates {
+			color.Yellow("These files are duplicates: %v", paths)
 		}
 		for path := range found {
 			color.Cyan("File %s is new!", path)
@@ -67,7 +70,7 @@ func main() {
 				if answer == "" || answer == "y" || answer == "Y" {
 					log.Println("sealing...")
 					for path, hash := range found {
-						hashes = append(hashes, struct{ Path, Hash string }{path, hash})
+						hashes = append(hashes, seal.LibRef{path, hash})
 						delete(found, path)
 					}
 					saveReport(*lib, hashes)
@@ -102,7 +105,7 @@ health:
 
 }
 
-func saveReport(lib string, hashes []struct{ Path, Hash string }) {
+func saveReport(lib string, hashes []seal.LibRef) {
 	filepath := filepath.Join(lib, "checksums.txt")
 	var buf bytes.Buffer
 	for _, e := range hashes {

@@ -5,15 +5,22 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
+
+	"github.com/chmllr/imgtb/seal"
 )
 
 // Verify matches new file list against existing records
-func Verify(lib string, hashes []struct{ Path, Hash string }) (corrupted []string, mapping1, mapping2 map[string]string) {
-	mapping1 = map[string]string{}
+func Verify(lib string, hashes []seal.LibRef) (
+	corrupted []string,
+	found, sealed map[string]string,
+	duplicates map[string][]string) {
+	found = map[string]string{}
+	duplicates = map[string][]string{}
 	for _, e := range hashes {
-		mapping1[e.Path] = e.Hash
+		found[e.Path] = e.Hash
+		duplicates[e.Hash] = append(duplicates[e.Hash], e.Path)
 	}
-	mapping2 = map[string]string{}
+	sealed = map[string]string{}
 	content, err := ioutil.ReadFile(filepath.Join(lib, "checksums.txt"))
 	if err != nil {
 		log.Fatal(err)
@@ -23,19 +30,24 @@ func Verify(lib string, hashes []struct{ Path, Hash string }) (corrupted []strin
 		if len(fields) != 2 {
 			log.Fatalf("unexpected line: %q", line)
 		}
-		mapping2[fields[0]] = fields[1]
+		sealed[fields[0]] = fields[1]
 	}
 
-	for path, hash1 := range mapping1 {
-		hash2, found := mapping2[path]
-		if !found {
+	for path, hash1 := range found {
+		hash2, ok := sealed[path]
+		if !ok {
 			continue
 		}
-		if found && hash1 != hash2 {
+		if ok && hash1 != hash2 {
 			corrupted = append(corrupted, path)
 		}
-		delete(mapping1, path)
-		delete(mapping2, path)
+		delete(found, path)
+		delete(sealed, path)
+	}
+	for hash, paths := range duplicates {
+		if len(paths) < 2 {
+			delete(duplicates, hash)
+		}
 	}
 	return
 }

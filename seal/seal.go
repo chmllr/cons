@@ -1,4 +1,4 @@
-package checksum
+package seal
 
 import (
 	"crypto/md5"
@@ -12,6 +12,10 @@ import (
 	"strings"
 )
 
+type LibRef struct {
+	Path, Hash string
+}
+
 var (
 	jpegRegexp = regexp.MustCompile(`(?i)\.jpe?g`)
 	mp4Regexp  = regexp.MustCompile(`(?i)\.mp4`)
@@ -19,7 +23,7 @@ var (
 
 // Reports walks through the folder structure and returns a mapping
 // file path -> md5 hash
-func Report(lib string) (res []struct{ Path, Hash string }, err error) {
+func Report(lib string) (res []LibRef, err error) {
 	maxLength := 0
 	err = filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -39,7 +43,7 @@ func Report(lib string) (res []struct{ Path, Hash string }, err error) {
 		if err != nil {
 			return err
 		}
-		res = append(res, struct{ Path, Hash string }{path, h})
+		res = append(res, LibRef{path, h})
 		return nil
 	})
 	if err != nil {
