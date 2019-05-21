@@ -14,6 +14,7 @@ import (
 
 type LibRef struct {
 	Path, Hash string
+	Size       int64
 }
 
 var (
@@ -23,7 +24,7 @@ var (
 
 // Reports walks through the folder structure and returns a mapping
 // file path -> md5 hash
-func Report(lib string) (res []LibRef, err error) {
+func Report(lib string, deep bool) (res []LibRef, err error) {
 	maxLength := 0
 	err = filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -33,17 +34,20 @@ func Report(lib string) (res []LibRef, err error) {
 			return nil
 		}
 
-		out := fmt.Sprintf("computing hash of %s...", path)
+		var h string
+		out := fmt.Sprintf("touching %s...", path)
 		if maxLength < len(out) {
 			maxLength = len(out)
 		}
 		fmt.Printf("\r%s", pad(out, maxLength))
 
-		h, err := hash(path)
-		if err != nil {
-			return err
+		if deep {
+			h, err = hash(path)
+			if err != nil {
+				return err
+			}
 		}
-		res = append(res, LibRef{path, h})
+		res = append(res, LibRef{path, h, info.Size()})
 		return nil
 	})
 	if err != nil {
