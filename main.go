@@ -1,18 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"encoding/csv"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/chmllr/imgtb/health"
 	"github.com/chmllr/imgtb/imp"
-	"github.com/chmllr/imgtb/seal"
+	"github.com/chmllr/imgtb/index"
 
 	"github.com/fatih/color"
 )
@@ -40,24 +36,24 @@ func main() {
 		if err != nil {
 			log.Fatalf("couldn't import: %v", err)
 		}
-		sealed, err := seal.Registry(*lib)
+		sealed, err := index.Index(*lib)
 		if err != nil {
-			log.Fatalf("couldn't get registry: %v", err)
+			log.Fatalf("couldn't get index: %v", err)
 		}
 		for _, ref := range sealed {
 			refs = append(refs, ref)
 		}
-		saveReport(*lib, refs)
+		index.Save(*lib, refs)
 	case "repair":
 		log.Println("sealing", *lib, "...")
-		files, err := seal.Report(*lib, true)
+		files, err := index.Report(*lib, true)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)
 		}
-		saveReport(*lib, files)
+		index.Save(*lib, files)
 	case "health":
 		log.Printf("checking (deep: %t) health of %q...\n", *deep, *lib)
-		libRefs, err := seal.Report(*lib, *deep)
+		libRefs, err := index.Report(*lib, *deep)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)
 		}
@@ -112,21 +108,4 @@ health (accepts option --deep):
 	missing, modified, duplicated and new files. If option 'deep' is proveded, 
 	checks the file hash as well.`)
 
-}
-
-func saveReport(lib string, refs []seal.LibRef) {
-	filepath := filepath.Join(lib, "index.csv")
-	var buf bytes.Buffer
-	w := csv.NewWriter(&buf)
-	for _, e := range refs {
-		if err := w.Write(e.Record()); err != nil {
-			log.Fatalf("couldn't write csv record: %v", err)
-		}
-	}
-	w.Flush()
-	err := ioutil.WriteFile(filepath, buf.Bytes(), 0666)
-	if err != nil {
-		log.Fatalf("couldn't write index: %v", err)
-	}
-	log.Println("checksums written to", filepath)
 }

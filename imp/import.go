@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chmllr/imgtb/seal"
+	"github.com/chmllr/imgtb/index"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/mknote"
 )
@@ -21,7 +21,7 @@ var (
 )
 
 // Import puts every file into the lib with YYYY/MM/DD folder structure
-func Import(lib, sourceFolder string) (refs []seal.LibRef, err error) {
+func Import(lib, sourceFolder string) (refs []index.LibRef, err error) {
 	exif.RegisterParsers(mknote.All...)
 
 	files, err := ioutil.ReadDir(sourceFolder)
@@ -73,7 +73,7 @@ func Import(lib, sourceFolder string) (refs []seal.LibRef, err error) {
 			if err != nil {
 				return nil, fmt.Errorf("couldn't open file %s: %v", to, err)
 			}
-			ref, err := seal.NewLibRef(to, info.Size())
+			ref, err := index.NewLibRef(to, info.Size())
 			if err != nil {
 				return nil, fmt.Errorf("couldn't create libref for %v: %v", info, err)
 			}

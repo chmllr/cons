@@ -1,16 +1,16 @@
 package health
 
 import (
-	"github.com/chmllr/imgtb/seal"
+	"github.com/chmllr/imgtb/index"
 )
 
 // Verify matches new file list against existing records
-func Verify(lib string, deep bool, hashes []seal.LibRef) (
+func Verify(lib string, deep bool, hashes []index.LibRef) (
 	corrupted []string,
-	found, sealed map[string]seal.LibRef,
+	found, sealed map[string]index.LibRef,
 	duplicates map[string][]string,
 	err error) {
-	found = map[string]seal.LibRef{}
+	found = map[string]index.LibRef{}
 	duplicates = map[string][]string{}
 	for _, e := range hashes {
 		found[e.Path] = e
@@ -18,7 +18,7 @@ func Verify(lib string, deep bool, hashes []seal.LibRef) (
 			duplicates[e.Hash] = append(duplicates[e.Hash], e.Path)
 		}
 	}
-	sealed, err = seal.Registry(lib)
+	sealed, err = index.Index(lib)
 	if err != nil {
 		return
 	}

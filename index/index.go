@@ -1,4 +1,4 @@
-package seal
+package index
 
 import (
 	"bytes"
@@ -75,7 +75,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 	return
 }
 
-func Registry(lib string) (map[string]LibRef, error) {
+func Index(lib string) (map[string]LibRef, error) {
 	sealed := map[string]LibRef{}
 	content, err := ioutil.ReadFile(filepath.Join(lib, "index.csv"))
 	if err != nil {
@@ -104,4 +104,21 @@ func hash(file string) (string, error) {
 
 func pad(s string, l int) string {
 	return s + strings.Repeat(" ", l-len(s))
+}
+
+func Save(lib string, refs []LibRef) {
+	filepath := filepath.Join(lib, "index.csv")
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	for _, e := range refs {
+		if err := w.Write(e.Record()); err != nil {
+			log.Fatalf("couldn't write csv record: %v", err)
+		}
+	}
+	w.Flush()
+	err := ioutil.WriteFile(filepath, buf.Bytes(), 0666)
+	if err != nil {
+		log.Fatalf("couldn't write index: %v", err)
+	}
+	log.Println("checksums written to", filepath)
 }
