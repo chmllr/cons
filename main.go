@@ -45,7 +45,7 @@ func main() {
 		}
 		index.Save(*lib, refs)
 	case "repair":
-		log.Println("sealing", *lib, "...")
+		log.Printf("repairing %q...\n", *lib)
 		files, err := index.Report(*lib, true)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)

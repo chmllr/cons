@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -50,7 +49,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 		}
 
 		var h string
-		out := fmt.Sprintf("touching %s...", path)
+		out := fmt.Sprintf("checking %s", path)
 		if maxLength < len(out) {
 			maxLength = len(out)
 		}
@@ -70,8 +69,6 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 	}
 
 	fmt.Printf("\r%s", "")
-	log.Println(pad("sorting...", maxLength))
-	sort.Slice(res, func(i, j int) bool { return res[i].Path < res[j].Path })
 	return
 }
 
