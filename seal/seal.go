@@ -1,7 +1,9 @@
 package seal
 
 import (
+	"bytes"
 	"crypto/md5"
+	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,12 +11,17 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
 type LibRef struct {
 	Path, Hash string
 	Size       int64
+}
+
+func (r LibRef) Record() []string {
+	return []string{r.Path, strconv.FormatInt(r.Size, 10), r.Hash}
 }
 
 var (
@@ -58,6 +65,30 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 	log.Println(pad("sorting...", maxLength))
 	sort.Slice(res, func(i, j int) bool { return res[i].Path < res[j].Path })
 	return
+}
+
+func Registry(lib string) (map[string]LibRef, error) {
+	sealed := map[string]LibRef{}
+	content, err := ioutil.ReadFile(filepath.Join(lib, "index.csv"))
+	if err != nil {
+		return nil, err
+	}
+	r := csv.NewReader(bytes.NewReader(content))
+	records, err := r.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, record := range records {
+		size, err := strconv.ParseInt(record[1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		sealed[record[0]] = LibRef{record[0], record[2], size}
+	}
+
+	return sealed, nil
 }
 
 func hash(file string) (string, error) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -115,17 +116,16 @@ health (accepts option --deep):
 
 }
 
-func saveReport(lib string, hashes []seal.LibRef) {
-	filepath := filepath.Join(lib, "checksums.txt")
+func saveReport(lib string, refs []seal.LibRef) {
+	filepath := filepath.Join(lib, "index.csv")
 	var buf bytes.Buffer
-	for _, e := range hashes {
-		buf.WriteString(e.Path)
-		buf.WriteString("::")
-		buf.WriteString(fmt.Sprintf("%d", e.Size))
-		buf.WriteString("::")
-		buf.WriteString(e.Hash)
-		buf.WriteString("\n")
+	w := csv.NewWriter(&buf)
+	for _, e := range refs {
+		if err := w.Write(e.Record()); err != nil {
+			log.Fatalln(err)
+		}
 	}
+	w.Flush()
 	err := ioutil.WriteFile(filepath, buf.Bytes(), 0666)
 	if err != nil {
 		log.Fatal(err)
