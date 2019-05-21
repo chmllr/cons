@@ -1,8 +1,6 @@
 package health
 
 import (
-	"log"
-
 	"github.com/chmllr/imgtb/seal"
 )
 
@@ -10,7 +8,8 @@ import (
 func Verify(lib string, deep bool, hashes []seal.LibRef) (
 	corrupted []string,
 	found, sealed map[string]seal.LibRef,
-	duplicates map[string][]string) {
+	duplicates map[string][]string,
+	err error) {
 	found = map[string]seal.LibRef{}
 	duplicates = map[string][]string{}
 	for _, e := range hashes {
@@ -19,10 +18,9 @@ func Verify(lib string, deep bool, hashes []seal.LibRef) (
 			duplicates[e.Hash] = append(duplicates[e.Hash], e.Path)
 		}
 	}
-	var err error
 	sealed, err = seal.Registry(lib)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
 	for path, lr := range found {

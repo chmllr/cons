@@ -20,6 +20,14 @@ type LibRef struct {
 	Size       int64
 }
 
+func NewLibRef(name string, size int64) (LibRef, error) {
+	h, err := hash(name)
+	if err != nil {
+		return LibRef{}, fmt.Errorf("couldn't create a libref for %s: %v", name, err)
+	}
+	return LibRef{name, h, size}, nil
+}
+
 func (r LibRef) Record() []string {
 	return []string{r.Path, strconv.FormatInt(r.Size, 10), r.Hash}
 }
@@ -35,7 +43,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 	maxLength := 0
 	err = filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if info.IsDir() || !jpegRegexp.MatchString(path) && !mp4Regexp.MatchString(path) {
 			return nil
@@ -58,7 +66,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't traverse folder structure: %v", err)
 	}
 
 	fmt.Printf("\r%s", "")
@@ -71,23 +79,21 @@ func Registry(lib string) (map[string]LibRef, error) {
 	sealed := map[string]LibRef{}
 	content, err := ioutil.ReadFile(filepath.Join(lib, "index.csv"))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't open index file: %v", err)
 	}
 	r := csv.NewReader(bytes.NewReader(content))
 	records, err := r.ReadAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't parse index file: %v", err)
 	}
-
 	for _, record := range records {
 		size, err := strconv.ParseInt(record[1], 10, 64)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("couldn't parse index entry: %v", err)
 		}
 
 		sealed[record[0]] = LibRef{record[0], record[2], size}
 	}
-
 	return sealed, nil
 }
 

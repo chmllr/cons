@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chmllr/imgtb/seal"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/rwcarlsen/goexif/mknote"
 )
@@ -20,12 +21,12 @@ var (
 )
 
 // Import puts every file into the lib with YYYY/MM/DD folder structure
-func Import(libFolder, sourceFolder string) {
+func Import(lib, sourceFolder string) (refs []seal.LibRef, err error) {
 	exif.RegisterParsers(mknote.All...)
 
 	files, err := ioutil.ReadDir(sourceFolder)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("could't read folder %s: %v", sourceFolder, err)
 	}
 
 	log.Println("files found:", len(files))
@@ -55,7 +56,7 @@ func Import(libFolder, sourceFolder string) {
 	log.Println("new folders required:", len(folders))
 	imported := 0
 	for folder, files := range folders {
-		destinationPath := filepath.Join(libFolder, folder)
+		destinationPath := filepath.Join(lib, folder)
 		if err := os.MkdirAll(destinationPath, os.ModePerm); err != nil && !os.IsExist(err) {
 			log.Printf("couldn't create folder %q: %v\n", destinationPath, err)
 			continue
@@ -68,10 +69,20 @@ func Import(libFolder, sourceFolder string) {
 				log.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
 				continue
 			}
+			info, err := os.Stat(to)
+			if err != nil {
+				return nil, fmt.Errorf("couldn't open file %s: %v", to, err)
+			}
+			ref, err := seal.NewLibRef(to, info.Size())
+			if err != nil {
+				return nil, fmt.Errorf("couldn't create libref for %v: %v", info, err)
+			}
+			refs = append(refs, ref)
 			imported++
 		}
 	}
 	log.Printf("files succesfully imported: %d/%d (%d skipped, %d failed)", imported, len(files), skipped, errors)
+	return
 }
 
 func mp4DateTime(path string) (time.Time, error) {
