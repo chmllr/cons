@@ -31,11 +31,12 @@ func main() {
 		if *source == "" {
 			log.Fatal("no source folder specified")
 		}
-		log.Println("importing to", *lib, "from", *source, "...")
+		log.Printf("importing to %q from %q...\n", *lib, *source)
 		refs, err := imp.Import(*lib, *source)
 		if err != nil {
 			log.Fatalf("couldn't import: %v", err)
 		}
+		index.Save(*lib, refs)
 		sealed, err := index.Index(*lib)
 		if err != nil {
 			log.Fatalf("couldn't get index: %v", err)
@@ -43,7 +44,6 @@ func main() {
 		for _, ref := range sealed {
 			refs = append(refs, ref)
 		}
-		index.Save(*lib, refs)
 	case "repair":
 		log.Printf("repairing %q...\n", *lib)
 		files, err := index.Report(*lib, true)

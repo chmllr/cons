@@ -19,12 +19,12 @@ type LibRef struct {
 	Size       int64
 }
 
-func NewLibRef(name string, size int64) (LibRef, error) {
-	h, err := hash(name)
+func NewLibRef(path string, size int64) (LibRef, error) {
+	h, err := hash(path)
 	if err != nil {
-		return LibRef{}, fmt.Errorf("couldn't create a libref for %s: %v", name, err)
+		return LibRef{}, fmt.Errorf("couldn't create a libref for %s: %v", path, err)
 	}
-	return LibRef{name, h, size}, nil
+	return LibRef{path, h, size}, nil
 }
 
 func (r LibRef) Record() []string {

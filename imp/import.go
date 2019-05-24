@@ -21,12 +21,12 @@ var (
 )
 
 // Import puts every file into the lib with YYYY/MM/DD folder structure
-func Import(lib, sourceFolder string) (refs []index.LibRef, err error) {
+func Import(lib, src string) (refs []index.LibRef, err error) {
 	exif.RegisterParsers(mknote.All...)
 
-	files, err := ioutil.ReadDir(sourceFolder)
+	files, err := ioutil.ReadDir(src)
 	if err != nil {
-		return nil, fmt.Errorf("could't read folder %s: %v", sourceFolder, err)
+		return nil, fmt.Errorf("could't read folder %s: %v", src, err)
 	}
 
 	log.Println("files found:", len(files))
@@ -36,7 +36,7 @@ func Import(lib, sourceFolder string) (refs []index.LibRef, err error) {
 	for _, f := range files {
 		var err error
 		var t time.Time
-		fullName := filepath.Join(sourceFolder, f.Name())
+		fullName := filepath.Join(src, f.Name())
 		if jpegRegexp.MatchString(fullName) {
 			t, err = imgDateTime(fullName)
 		} else if mp4Regexp.MatchString(fullName) {
@@ -62,20 +62,25 @@ func Import(lib, sourceFolder string) (refs []index.LibRef, err error) {
 			continue
 		}
 		for _, fileName := range files {
-			from := filepath.Join(sourceFolder, fileName)
+			from := filepath.Join(src, fileName)
 			to := filepath.Join(destinationPath, fileName)
-			err := moveFile(from, to)
+			info, err := os.Stat(from)
 			if err != nil {
-				log.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
+				log.Printf("couldn't open file %s: %v", from, err)
+				errors++
 				continue
 			}
-			info, err := os.Stat(to)
+			ref, err := index.NewLibRef(from, info.Size())
 			if err != nil {
-				return nil, fmt.Errorf("couldn't open file %s: %v", to, err)
+				log.Printf("couldn't create libref for %v: %v", info, err)
+				errors++
+				continue
 			}
-			ref, err := index.NewLibRef(to, info.Size())
-			if err != nil {
-				return nil, fmt.Errorf("couldn't create libref for %v: %v", info, err)
+			ref.Path = to
+			if err := moveFile(from, to); err != nil {
+				log.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
+				errors++
+				continue
 			}
 			refs = append(refs, ref)
 			imported++
