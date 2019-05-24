@@ -15,7 +15,7 @@ import (
 
 func main() {
 	lib := flag.String("lib", "", "path to the photo library")
-	source := flag.String("source", "", "source directory")
+	src := flag.String("src", "", "source directory")
 	deep := flag.Bool("deep", false, "deep check (includes md5 comparison)")
 	flag.Parse()
 
@@ -28,11 +28,11 @@ func main() {
 
 	switch cmd {
 	case "import":
-		if *source == "" {
+		if *src == "" {
 			log.Fatal("no source folder specified")
 		}
-		log.Printf("importing to %q from %q...\n", *lib, *source)
-		refs, err := imp.Import(*lib, *source)
+		log.Printf("importing to %q from %q...\n", *lib, *src)
+		refs, err := imp.Import(*lib, *src)
 		if err != nil {
 			log.Fatalf("couldn't import: %v", err)
 		}
@@ -95,7 +95,7 @@ func printHelp() {
 
 Avaliable commands:
 
-import (requires option --source <PATH>):
+import (requires option --src <PATH>):
 	Imports all media files from the specified source path into the lib folder.
 	It creates the corresponding folder structure (<lib>/YYYY/MM/DD) if necessary.
 
