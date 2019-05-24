@@ -68,7 +68,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 		return nil, fmt.Errorf("couldn't traverse folder structure: %v", err)
 	}
 
-	fmt.Printf("\r%s", "")
+	fmt.Printf("\n\r%s", "")
 	return
 }
 
@@ -76,6 +76,9 @@ func Index(lib string) (map[string]LibRef, error) {
 	sealed := map[string]LibRef{}
 	content, err := ioutil.ReadFile(filepath.Join(lib, "index.csv"))
 	if err != nil {
+		if os.IsNotExist(err) {
+			return map[string]LibRef{}, nil
+		}
 		return nil, fmt.Errorf("couldn't open index file: %v", err)
 	}
 	r := csv.NewReader(bytes.NewReader(content))

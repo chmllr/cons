@@ -36,7 +36,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("couldn't import: %v", err)
 		}
-		index.Save(*lib, refs)
 		sealed, err := index.Index(*lib)
 		if err != nil {
 			log.Fatalf("couldn't get index: %v", err)
@@ -44,6 +43,7 @@ func main() {
 		for _, ref := range sealed {
 			refs = append(refs, ref)
 		}
+		index.Save(*lib, refs)
 	case "repair":
 		log.Printf("repairing %q...\n", *lib)
 		files, err := index.Report(*lib, true)
