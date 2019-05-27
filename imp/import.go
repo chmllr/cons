@@ -70,7 +70,7 @@ func Import(lib, src string) (refs []index.LibRef, err error) {
 				errors++
 				continue
 			}
-			ref, err := index.NewLibRef(from, info.Size())
+			ref, err := index.NewLibRef(lib, from, info.Size())
 			if err != nil {
 				log.Printf("couldn't create libref for %v: %v", info, err)
 				errors++

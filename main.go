@@ -19,9 +19,17 @@ func main() {
 	deep := flag.Bool("deep", false, "deep check (includes md5 comparison)")
 	flag.Parse()
 
-	if len(flag.Args()) != 1 || *lib == "" {
+	if len(flag.Args()) != 1 {
 		printHelp()
 		os.Exit(1)
+	}
+
+	if *lib == "" {
+		var err error
+		*lib, err = os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	cmd := flag.Args()[0]
@@ -95,9 +103,10 @@ func printHelp() {
 
 Avaliable commands:
 
-import (requires option --src <PATH>):
+import (accepts option --src <PATH>):
 	Imports all media files from the specified source path into the lib folder.
 	It creates the corresponding folder structure (<lib>/YYYY/MM/DD) if necessary.
+	If no source folder was specified, the current directory is used.
 
 repair:
 	Seals all existing files with their md5 hashes into the lib index. It does not

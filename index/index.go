@@ -19,12 +19,22 @@ type LibRef struct {
 	Size       int64
 }
 
-func NewLibRef(path string, size int64) (LibRef, error) {
-	h, err := hash(path)
+func NewLibRef(lib, path string, size int64) (LibRef, error) {
+	ref := newLibRefUnhashed(lib, path, size)
+	var err error
+	ref.Hash, err = hash(path)
 	if err != nil {
-		return LibRef{}, fmt.Errorf("couldn't create a libref for %s: %v", path, err)
+		err = fmt.Errorf("couldn't create a libref for %s: %v", path, err)
 	}
-	return LibRef{path, h, size}, nil
+	return ref, err
+}
+
+func newLibRefUnhashed(lib, path string, size int64) LibRef {
+	for lib[len(lib)-1] != '/' {
+		lib += "/"
+	}
+	path = strings.Replace(path, lib, "", -1)
+	return LibRef{path, "", size}
 }
 
 func (r LibRef) Record() []string {
@@ -48,20 +58,21 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 			return nil
 		}
 
-		var h string
 		out := fmt.Sprintf("checking %s", path)
 		if maxLength < len(out) {
 			maxLength = len(out)
 		}
 		fmt.Printf("\r%s", pad(out, maxLength))
-
+		var ref LibRef
 		if deep {
-			h, err = hash(path)
+			ref, err = NewLibRef(lib, path, info.Size())
 			if err != nil {
 				return err
 			}
+		} else {
+			ref = newLibRefUnhashed(lib, path, info.Size())
 		}
-		res = append(res, LibRef{path, h, info.Size()})
+		res = append(res, ref)
 		return nil
 	})
 	if err != nil {
