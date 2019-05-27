@@ -30,11 +30,7 @@ func NewLibRef(lib, path string, size int64) (LibRef, error) {
 }
 
 func newLibRefUnhashed(lib, path string, size int64) LibRef {
-	for lib[len(lib)-1] != '/' {
-		lib += "/"
-	}
-	path = strings.Replace(path, lib, "", -1)
-	return LibRef{path, "", size}
+	return LibRef{removeLibPart(lib, path), "", size}
 }
 
 func (r LibRef) Record() []string {
@@ -58,7 +54,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 			return nil
 		}
 
-		out := fmt.Sprintf("checking %s", path)
+		out := fmt.Sprintf("checking %s", removeLibPart(lib, path))
 		if maxLength < len(out) {
 			maxLength = len(out)
 		}
@@ -111,6 +107,13 @@ func Index(lib string) (map[string]LibRef, error) {
 func hash(file string) (string, error) {
 	data, err := ioutil.ReadFile(file)
 	return fmt.Sprintf("%x", md5.Sum(data)), err
+}
+
+func removeLibPart(lib, path string) string {
+	for lib[len(lib)-1] != '/' {
+		lib += "/"
+	}
+	return strings.Replace(path, lib, "", -1)
 }
 
 func pad(s string, l int) string {
