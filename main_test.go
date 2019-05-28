@@ -28,7 +28,7 @@ func tearDown(t *testing.T) {
 	run(t, "rm -rf testdata/lib")
 }
 
-func TestCleanImport(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	setUp(t)
 	for name, content := range files {
 		data, err := base64.StdEncoding.DecodeString(content)
@@ -56,7 +56,32 @@ func TestCleanImport(t *testing.T) {
 	}
 	out := run(t, "go run main.go --lib testdata/lib health")
 	if !strings.Contains(out, "good health") {
-		t.Fatalf("unexpected health check result: %s", out)
+		t.Fatalf("expected good health result, got: %s", out)
+	}
+	out = run(t, "go run main.go --lib testdata/lib --deep health")
+	if !strings.Contains(out, "perfect health") {
+		t.Fatalf("expected perfect health result, got: %s", out)
+	}
+	if err = ioutil.WriteFile("testdata/lib/2019/05/26/20190526_104122.mp4", []byte{1, 1}, 0777); err != nil {
+		t.Fatal(err)
+	}
+	out = run(t, "go run main.go --lib testdata/lib health")
+	if !strings.Contains(out, "good health") {
+		t.Fatalf("expected good health result, got: %s", out)
+	}
+	out = run(t, "go run main.go --lib testdata/lib --deep health")
+	if !strings.Contains(out, "20190526_104122.mp4 is corrupted") {
+		t.Fatalf("expected corrupted 20190526_104122.mp4, got: %s", out)
+	}
+	run(t, "rm testdata/lib/2019/05/26/20190526_104122.mp4")
+	out = run(t, "go run main.go --lib testdata/lib health")
+	if !strings.Contains(out, "20190526_104122.mp4 is missing") {
+		t.Fatalf("expected 20190526_104122.mp4 missing, got: %s", out)
+	}
+	run(t, "go run main.go --lib testdata/lib repair")
+	out = run(t, "go run main.go --lib testdata/lib --deep health")
+	if !strings.Contains(out, "perfect health") {
+		t.Fatalf("expected perfect health result, got: %s", out)
 	}
 	tearDown(t)
 }
