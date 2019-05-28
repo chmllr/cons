@@ -17,3 +17,5 @@ show:
 create-test-data:
 	mkdir -p testdata/lib testdata/import-original testdata/lib testdata/import
 
+test:
+	go test *.go

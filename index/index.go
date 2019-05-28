@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -121,6 +122,7 @@ func pad(s string, l int) string {
 }
 
 func Save(lib string, refs []LibRef) {
+	sort.Slice(refs, func(i, j int) bool { return refs[i].Path < refs[j].Path })
 	filepath := filepath.Join(lib, "index.csv")
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
