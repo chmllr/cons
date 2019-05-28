@@ -39,7 +39,7 @@ func main() {
 		if *src == "" {
 			log.Fatal("no source folder specified")
 		}
-		log.Printf("importing to %q from %q...\n", *lib, *src)
+		fmt.Printf("importing to %q from %q...\n", *lib, *src)
 		refs, err := imp.Import(*lib, *src)
 		if err != nil {
 			log.Fatalf("couldn't import: %v", err)
@@ -53,14 +53,14 @@ func main() {
 		}
 		index.Save(*lib, refs)
 	case "repair":
-		log.Printf("repairing %q...\n", *lib)
+		fmt.Printf("repairing %q...\n", *lib)
 		files, err := index.Report(*lib, true)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)
 		}
 		index.Save(*lib, files)
 	case "health":
-		log.Printf("checking (deep: %t) health of %q...\n", *deep, *lib)
+		fmt.Printf("checking (deep: %t) health of %q...\n", *deep, *lib)
 		libRefs, err := index.Report(*lib, *deep)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)
@@ -86,13 +86,13 @@ func main() {
 		}
 		if len(corrupted) == 0 && len(sealed) == 0 && len(duplicates) == 0 && len(found) == 0 {
 			if *deep {
-				log.Printf("%q is in perfect health! ✅\n", *lib)
+				fmt.Printf("%q is in perfect health! ✅\n", *lib)
 			} else {
-				log.Printf("%q is in a good health (use --deep for a complete check)! ✅\n", *lib)
+				fmt.Printf("%q is in a good health (use --deep for a complete check)! ✅\n", *lib)
 			}
 		}
 	default:
-		log.Printf("Error: unknown command %q\n\n", cmd)
+		fmt.Printf("Error: unknown command %q\n\n", cmd)
 		printHelp()
 		os.Exit(1)
 	}

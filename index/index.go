@@ -20,18 +20,8 @@ type LibRef struct {
 	Size       int64
 }
 
-func NewLibRef(lib, path string, size int64) (LibRef, error) {
-	ref := newLibRefUnhashed(lib, path, size)
-	var err error
-	ref.Hash, err = hash(path)
-	if err != nil {
-		err = fmt.Errorf("couldn't create a libref for %s: %v", path, err)
-	}
-	return ref, err
-}
-
-func newLibRefUnhashed(lib, path string, size int64) LibRef {
-	return LibRef{removeLibPart(lib, path), "", size}
+func NewLibRef(lib, path, hash string, size int64) LibRef {
+	return LibRef{removeLibPart(lib, path), hash, size}
 }
 
 func (r LibRef) Record() []string {
@@ -60,16 +50,14 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 			maxLength = len(out)
 		}
 		fmt.Printf("\r%s", pad(out, maxLength))
-		var ref LibRef
+		var hash string
 		if deep {
-			ref, err = NewLibRef(lib, path, info.Size())
+			hash, err = Hash(path)
 			if err != nil {
 				return err
 			}
-		} else {
-			ref = newLibRefUnhashed(lib, path, info.Size())
 		}
-		res = append(res, ref)
+		res = append(res, NewLibRef(lib, path, hash, info.Size()))
 		return nil
 	})
 	if err != nil {
@@ -105,7 +93,7 @@ func Index(lib string) (map[string]LibRef, error) {
 	return sealed, nil
 }
 
-func hash(file string) (string, error) {
+func Hash(file string) (string, error) {
 	data, err := ioutil.ReadFile(file)
 	return fmt.Sprintf("%x", md5.Sum(data)), err
 }
@@ -136,5 +124,5 @@ func Save(lib string, refs []LibRef) {
 	if err != nil {
 		log.Fatalf("couldn't write index: %v", err)
 	}
-	log.Println("checksums written to", filepath)
+	fmt.Println("checksums written to", filepath)
 }

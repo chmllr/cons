@@ -44,24 +44,28 @@ func TestCleanImport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := `testdata/lib/2019/05/18/20190518_115208.jpg,3964,befc025f683d43e6084a11475bef97a2
-testdata/lib/2019/05/25/20190525_163849.jpg,3905,08b828b7cc3565c7552b62f7bf898acd
-testdata/lib/2019/05/26/20190526_104122.mp4,2,897316929176464ebc9ad085f31e7284
-testdata/lib/2019/05/26/20190526_182653.jpg,3965,60f0dc2ed8c723ca267c7f67852e0472
-testdata/lib/2019/05/26/20190526_214716.jpg,3944,b24c0e40d276a2fff3cd325d933c447a
+	want := `2019/05/18/20190518_115208.jpg,3964,befc025f683d43e6084a11475bef97a2
+2019/05/25/20190525_163849.jpg,3905,08b828b7cc3565c7552b62f7bf898acd
+2019/05/26/20190526_104122.mp4,2,897316929176464ebc9ad085f31e7284
+2019/05/26/20190526_182653.jpg,3965,60f0dc2ed8c723ca267c7f67852e0472
+2019/05/26/20190526_214716.jpg,3944,b24c0e40d276a2fff3cd325d933c447a
 `
 	got := string(data)
 	if want != got {
-		t.Fatalf("unexpected index.csv: want:\n%q\ngot:\n%q", want, got)
+		t.Fatalf("unexpected index.csv: want:\n%s\ngot:\n%s", want, got)
+	}
+	out := run(t, "go run main.go --lib testdata/lib health")
+	if !strings.Contains(out, "good health") {
+		t.Fatalf("unexpected health check result: %s", out)
 	}
 	tearDown(t)
 }
 
-func run(t *testing.T, s string) {
+func run(t *testing.T, s string) string {
 	fields := strings.Fields(s)
-	cmd := exec.Command(fields[0], fields[1:]...)
-	err := cmd.Run()
+	out, err := exec.Command(fields[0], fields[1:]...).Output()
 	if err != nil {
 		t.Fatalf("failed on %s: %v", s, err)
 	}
+	return string(out)
 }

@@ -3,7 +3,6 @@ package imp
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -29,7 +28,7 @@ func Import(lib, src string) (refs []index.LibRef, err error) {
 		return nil, fmt.Errorf("could't read folder %s: %v", src, err)
 	}
 
-	log.Println("files found:", len(files))
+	fmt.Println("files found:", len(files))
 	folders := map[string][]string{}
 	skipped := 0
 	errors := 0
@@ -46,19 +45,19 @@ func Import(lib, src string) (refs []index.LibRef, err error) {
 			continue
 		}
 		if err != nil {
-			log.Printf("skipping file %s due to errors: %v\n", f.Name(), err)
+			fmt.Printf("skipping file %s due to errors: %v\n", f.Name(), err)
 			errors++
 			continue
 		}
 		folder := t.Format("2006/01/02")
 		folders[folder] = append(folders[folder], f.Name())
 	}
-	log.Println("new folders required:", len(folders))
+	fmt.Println("new folders required:", len(folders))
 	imported := 0
 	for folder, files := range folders {
 		destinationPath := filepath.Join(lib, folder)
 		if err := os.MkdirAll(destinationPath, os.ModePerm); err != nil && !os.IsExist(err) {
-			log.Printf("couldn't create folder %q: %v\n", destinationPath, err)
+			fmt.Printf("couldn't create folder %q: %v\n", destinationPath, err)
 			continue
 		}
 		for _, fileName := range files {
@@ -66,19 +65,19 @@ func Import(lib, src string) (refs []index.LibRef, err error) {
 			to := filepath.Join(destinationPath, fileName)
 			info, err := os.Stat(from)
 			if err != nil {
-				log.Printf("couldn't open file %s: %v", from, err)
+				fmt.Printf("couldn't open file %s: %v", from, err)
 				errors++
 				continue
 			}
-			ref, err := index.NewLibRef(lib, from, info.Size())
+			hash, err := index.Hash(from)
 			if err != nil {
-				log.Printf("couldn't create libref for %v: %v", info, err)
+				fmt.Printf("couldn't hash file %s: %v", from, err)
 				errors++
 				continue
 			}
-			ref.Path = to
+			ref := index.NewLibRef(lib, to, hash, info.Size())
 			if err := moveFile(from, to); err != nil {
-				log.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
+				fmt.Printf("couldn't move file from %q to %q: %v\n", from, to, err)
 				errors++
 				continue
 			}
@@ -86,7 +85,7 @@ func Import(lib, src string) (refs []index.LibRef, err error) {
 			imported++
 		}
 	}
-	log.Printf("files succesfully imported: %d/%d (%d skipped, %d failed)", imported, len(files), skipped, errors)
+	fmt.Printf("files succesfully imported: %d/%d (%d skipped, %d failed)", imported, len(files), skipped, errors)
 	return
 }
 
