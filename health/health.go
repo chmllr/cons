@@ -1,7 +1,7 @@
 package health
 
 import (
-	"github.com/chmllr/imgtb/index"
+	"github.com/chmllr/cons/index"
 )
 
 // Verify matches new file list against existing records
