@@ -3,8 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"regexp"
+	"strings"
 
 	"github.com/chmllr/cons/health"
 	"github.com/chmllr/cons/index"
@@ -30,19 +34,40 @@ func main() {
 		}
 	}
 
+	ignoreFile := path.Join(*dir, ".consignore")
+	data, err := ioutil.ReadFile(ignoreFile)
+	filters := []*regexp.Regexp{
+		regexp.MustCompile(`\.index.csv`),
+		regexp.MustCompile(`\.consignore`),
+	}
+	if err != nil && !os.IsNotExist(err) {
+		log.Fatalf("failed to open %s: %v", ignoreFile, err)
+	} else {
+		for _, v := range strings.Split(string(data), "\n") {
+			if strings.TrimSpace(v) == "" {
+				continue
+			}
+			re, err := regexp.Compile(v)
+			if err != nil {
+				log.Printf("parsing %s: %v", ignoreFile, err)
+			}
+			filters = append(filters, re)
+		}
+	}
+
 	cmd := flag.Args()[0]
 
 	switch cmd {
 	case "seal":
 		fmt.Printf("sealing %q...\n", *dir)
-		files, err := index.Report(*dir, true)
+		files, err := index.Report(*dir, filters, true)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)
 		}
 		index.Save(*dir, files)
 	case "verify":
 		fmt.Printf("verifying (deep: %t) %q...\n", *deep, *dir)
-		libRefs, err := index.Report(*dir, *deep)
+		libRefs, err := index.Report(*dir, filters, *deep)
 		if err != nil {
 			log.Fatalf("couldn't get report: %v", err)
 		}
@@ -82,13 +107,16 @@ func main() {
 func printHelp() {
 	fmt.Println(`Usage: cons --dir <PATH> [OPTIONS] <COMMAND>
 
-cons helps keeping track of file changes in a directory.  If no directory
-parameter is provided, the current directory is used.
+cons keeps track of file changes in a directory. If no directory parameter was
+provided, the current directory is used. cons creates a file index inside 
+".index.csv" file in CSV format. If certain files should be ignored, create
+a file name ".consignore" inside the tracked directory with one regular
+expression per line, matching the file names to be ignored.
 
 Avaliable commands:
 
 seal:
-	Seals all existing files with their md5 hashes into the directory index.
+	Seals all existing files with their MD5 hashes into the directory index.
 	It does not make any mutating operations on the directory!
 
 verify (accepts option --deep):

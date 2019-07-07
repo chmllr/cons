@@ -28,21 +28,21 @@ func (r LibRef) Record() []string {
 	return []string{r.Path, strconv.FormatInt(r.Size, 10), r.Hash}
 }
 
-var (
-	jpegRegexp = regexp.MustCompile(`(?i)\.jpe?g`)
-	mp4Regexp  = regexp.MustCompile(`(?i)\.mp4`)
-)
-
 // Reports walks through the folder structure and returns a mapping
 // file path -> md5 hash
-func Report(lib string, deep bool) (res []LibRef, err error) {
+func Report(lib string, filters []*regexp.Regexp, deep bool) (res []LibRef, err error) {
 	maxLength := 0
 	err = filepath.Walk(lib, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() || !jpegRegexp.MatchString(path) && !mp4Regexp.MatchString(path) {
+		if info.IsDir() {
 			return nil
+		}
+		for _, filter := range filters {
+			if filter.MatchString(path) {
+				return nil
+			}
 		}
 
 		out := fmt.Sprintf("checking %s", removeLibPart(lib, path))
@@ -70,7 +70,7 @@ func Report(lib string, deep bool) (res []LibRef, err error) {
 
 func Index(lib string) (map[string]LibRef, error) {
 	sealed := map[string]LibRef{}
-	content, err := ioutil.ReadFile(filepath.Join(lib, "index.csv"))
+	content, err := ioutil.ReadFile(filepath.Join(lib, ".index.csv"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return map[string]LibRef{}, nil
@@ -111,7 +111,7 @@ func pad(s string, l int) string {
 
 func Save(lib string, refs []LibRef) {
 	sort.Slice(refs, func(i, j int) bool { return refs[i].Path < refs[j].Path })
-	filepath := filepath.Join(lib, "index.csv")
+	filepath := filepath.Join(lib, ".index.csv")
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
 	for _, e := range refs {
