@@ -4,9 +4,9 @@ cons
     Usage: cons --dir <PATH> [OPTIONS] <COMMAND>
     
     cons keeps track of file changes in a directory. If no directory parameter was
-    provided, the current directory is used. cons creates a file index inside 
-    ".index.csv" file in CSV format. If certain files should be ignored, create
-    a file name ".consignore" inside the tracked directory with one regular
+    provided, the current directory is used. cons creates a file index inside the
+    `.index.csv' file in CSV format. If certain files should be ignored, create
+    a file name `.consignore' inside the tracked directory with one regular
     expression per line, matching the file names to be ignored.
     
     Avaliable commands:
