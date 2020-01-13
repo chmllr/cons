@@ -12,8 +12,9 @@ cons
     Avaliable commands:
     
     seal:
-    	Seals all existing files with their MD5 hashes into the directory index.
-    	It does not make any mutating operations on the directory!
+    	Seals all existing files with their MD5 hashes and sizes into the directory
+        index. It does not mutate anything inside the directory, except the index
+        file.
     
     verify (accepts option --deep):
     	Checks existing file structure against the index. This command can detect 
