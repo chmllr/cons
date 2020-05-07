@@ -12,7 +12,7 @@ cons
     Avaliable commands:
     
     seal:
-    	Seals all existing files with their MD5 hashes and sizes into the directory
+        Seals all existing files with their MD5 hashes and sizes into the directory
         index. It does not mutate anything inside the directory, except the index
         file.
     
