@@ -17,6 +17,6 @@ cons
         file.
     
     verify (accepts option --deep):
-    	Checks existing file structure against the index. This command can detect 
-    	missing, modified, duplicated and new files. If option 'deep' is provided, 
-    	compares files based on the MD5 hash.
+        Checks existing file structure against the index. This command can detect 
+        missing, modified, duplicated and new files. If option 'deep' is provided, 
+        compares files based on the MD5 hash.
